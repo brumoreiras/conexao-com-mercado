@@ -1,85 +1,224 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Microempresas grandes negócios</title>
+    <title>Apresentação Interativa</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
+            padding: 20px;
             background-color: #f4f4f4;
-            padding: 16px;
         }
-        h1 {
+
+        .carousel {
+            width: 100%;
+            max-width: 800px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
             text-align: center;
-            font-size: 2rem;
         }
-        .video-container {
-            width: 100%;
-            max-width: 600px;
-            margin: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+        .slide {
+            display: none;
         }
-        .video-container {
-            width: 100%;
-            max-width: 600px;
-            margin: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        video {
-            width: 100%;
-            height: auto;
+
+        .slide.active {
             display: block;
         }
+
+        .slide img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+
         .buttons {
             margin-top: 20px;
         }
-        .buttons a {
-            text-decoration: none;
-            color: white;
-            background-color: #007BFF;
+
+        .buttons button {
+            margin: 0 10px;
             padding: 10px 20px;
-            border-radius: 5px;
-            margin: 5px;
-            display: inline-block;
-            transition: background-color 0.3s;
+            font-size: 16px;
         }
-        .buttons a:hover {
-            background-color: #0056b3;
-        }
-        #certificadoButton {
+
+        #formularioCertificado {
             display: none;
+            margin-top: 20px;
+        }
+
+        #formularioCertificado input {
+            padding: 10px;
+            font-size: 16px;
+            width: 80%;
+            margin-bottom: 10px;
+        }
+
+        #formularioCertificado button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
         }
     </style>
 </head>
+
 <body>
-    <h1>Microempresas grandes negócios</h1>
-    <div class="video-container">
-        <video id="myVideo" controls>
-            <source src="VID-20240516-WA0023.mp4" type="video/mp4">
-            Seu navegador não suporta o elemento de vídeo.
-        </video>
-    </div>
+    <h1>Apresentação: Crédito e Finanças</h1>
+
+    <div class="carousel" id="carousel"></div>
+
     <div class="buttons">
-        <a href="Apostila.pdf" download>Baixar Material</a>
-        <a href="certificado.jpeg" download id="certificadoButton">Baixar Certificado</a>
-        <p>Para obter o certificado, assista ao vídeo até o final.</p>
+        <button onclick="changeSlide(-1)">Anterior</button>
+        <button onclick="changeSlide(1)">Próximo</button>
+    </div>
+
+    <div id="formularioCertificado">
+        <h3>Parabéns por concluir a apresentação!</h3>
+        <p>Preencha seu nome completo para gerar seu certificado simbólico de participação:</p>
+        <input type="text" id="nomeParticipante" placeholder="Seu nome completo">
+        <br>
+        <button onclick="gerarCertificadoPDF()">Gerar Certificado</button>
     </div>
 
     <script>
-        const video = document.getElementById('myVideo');
-        const certificadoButton = document.getElementById('certificadoButton');
+        const totalSlides = 1;
+        const carousel = document.getElementById('carousel');
+        const formCertificado = document.getElementById('formularioCertificado');
+        let currentSlide = 0;
 
-        video.addEventListener('ended', () => {
-            certificadoButton.style.display = 'inline-block';
-        });
+        for (let i = 1; i <= totalSlides; i++) {
+            const div = document.createElement('div');
+            div.classList.add('slide');
+            if (i === 1) div.classList.add('active');
+
+            if (i === totalSlides) {
+                const message = document.createElement('p');
+                message.textContent = 'Você chegou ao final da apresentação!';
+                div.appendChild(message);
+            } else {
+                const img = document.createElement('img');
+                img.src = `/img/slide${i}.png`;
+                img.alt = `Slide ${i}`;
+                div.appendChild(img);
+            }
+
+            carousel.appendChild(div);
+        }
+
+        const slides = document.querySelectorAll('.slide');
+
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                if (i === index) slide.classList.add('active');
+            });
+            formCertificado.style.display = (index === totalSlides - 1) ? 'block' : 'none';
+        }
+
+        function changeSlide(direction) {
+            currentSlide += direction;
+            if (currentSlide < 0) currentSlide = 0;
+            if (currentSlide >= totalSlides) currentSlide = totalSlides - 1;
+            showSlide(currentSlide);
+        }
+
+        async function gerarCertificadoPDF() {
+            const nome = document.getElementById('nomeParticipante').value.trim();
+            if (nome === '') {
+                alert('Por favor, preencha seu nome completo.');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape' });
+
+            const img = new Image();
+            img.src = 'certificado.png';
+
+            img.onload = () => {
+                doc.addImage(img, 'JPEG', 0, 0, 297, 210); // A4 landscape em mm
+
+                doc.setFont('Helvetica', 'bold');
+                doc.setFontSize(24);
+                doc.setTextColor(40, 40, 40);
+                doc.text('Certificado de Participação', 148, 80, { align: 'center' });
+
+                /* doc.setFont('Helvetica', 'normal');
+                doc.setFontSize(16);
+                doc.text(`Certificamos que ${nome}`, 148, 90, { align: 'center' });
+                doc.text('Participou da apresentação "Crédito e Finanças para MEIs e Autônomos".', 148, 100, { align: 'center' });
+
+                doc.setFontSize(12);
+                doc.setTextColor(120, 120, 120); // cor mais clara
+                doc.text('Emitido automaticamente via sistema.', 148, 130, { align: 'center' }); */
+
+                // Frase com nome em negrito na mesma linha
+                /* const textBefore = 'Certificamos que';
+                const textAfter = 'participou da apresentação "Crédito e Finanças para MEIs e Autônomos".';
+                const xStart = 30;
+                const y = 90;
+
+                doc.setFontSize(16);
+                doc.setFont('Helvetica', 'normal');
+                doc.text(textBefore, xStart, y);
+                const widthBefore = doc.getTextWidth(textBefore + ' ');
+
+                doc.setFont('Helvetica', 'bold');
+                doc.text(nome, xStart + widthBefore, y);
+                const widthName = doc.getTextWidth(nome + ' ');
+
+                doc.setFont('Helvetica', 'normal');
+                doc.text(textAfter, xStart + widthBefore + widthName, y); */
+
+                // Linha: Certificamos que NOME,
+                const textBefore = 'Certificamos que ';
+                const textAfter = ',';
+                const xStart = 148;
+                const yLine = 90;
+
+                doc.setFontSize(16);
+                doc.setFont('Helvetica', 'normal');
+                const widthBefore = doc.getTextWidth(textBefore);
+                const widthName = doc.getTextWidth(nome);
+                const totalWidth = widthBefore + widthName + doc.getTextWidth(textAfter);
+                let xAligned = xStart - totalWidth / 2;
+
+                doc.text(textBefore, xAligned, yLine);
+                doc.setFont('Helvetica', 'bold');
+                doc.text(nome, xAligned + widthBefore, yLine);
+                doc.setFont('Helvetica', 'normal');
+                doc.text(textAfter, xAligned + widthBefore + widthName, yLine);
+
+                // Segunda linha: Participou da apresentação...
+                doc.setFont('Helvetica', 'normal');
+                doc.text('Participou da apresentação "Crédito e Finanças para MEIs e Autônomos".', 148, 100, { align: 'center' });
+
+                doc.setFontSize(12);
+                doc.setTextColor(120, 120, 120); // cor mais clara
+                doc.text('Emitido automaticamente via sistema.', 148, 130, { align: 'center' });
+
+                doc.setFontSize(12);
+                doc.text('PROJETO DESENVOLVIMENTO SUSTENTAVEL: EMPREGO E CRESCIMENTO ECONÔMICO – EXTENSÃO.', 148, 185, { align: 'center' });
+
+
+                doc.save(`certificado-${nome.replace(/\s+/g, '_')}.pdf`);
+            };
+
+            img.onerror = () => {
+                alert('Erro ao carregar a imagem de fundo do certificado. Verifique se "certificado-fundo.jpg" está na pasta.');
+            };
+        }
     </script>
 </body>
+
 </html>
